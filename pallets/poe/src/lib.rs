@@ -2,6 +2,12 @@
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 // Define the pallet module using the frame_support::pallet macro
 // A pallet for proof of existence.
 #[frame_support::pallet]
@@ -12,7 +18,6 @@ pub mod pallet {
 
     // Define the pallet struct using the pallet::pallet macro
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     // Define the pallet's configuration trait
@@ -55,6 +60,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         // Create a new claim
+		#[pallet::call_index(0)]
         #[pallet::weight(0)]
         pub fn create_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResult {
             // Verify that the transaction is signed by a valid account
@@ -76,6 +82,7 @@ pub mod pallet {
         }
 
         // Revoke an existing claim
+		#[pallet::call_index(1)]
         #[pallet::weight(0)]
         pub fn revoke_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResult {
             // Verify that the transaction is signed by a valid account
@@ -102,6 +109,7 @@ pub mod pallet {
 		}
 		
 		/// transfer the claim from a account id to another account id.
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn transfer_claim(origin: OriginFor<T>, claim: Vec<u8>, dest: T::AccountId) -> DispatchResult{
 			// Ensure that the transaction is signed by the sender.
