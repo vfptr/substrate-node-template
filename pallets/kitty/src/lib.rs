@@ -25,23 +25,30 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+
+	// Define the kitty struct.
 	pub type KittyId = u32;
 	#[derive(Encode, Decode, Clone, Copy, RuntimeDebug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 	pub struct Kitty(pub [u8; 16]);
 
+
+	// Define the kitty id for storing, increasing 1 every time a kitty is created or breed.
 	#[pallet::storage]
 	#[pallet::getter(fn next_kitty_id)]
 	pub type NextKittyId<T> = StorageValue<_, KittyId, ValueQuery>;
 
+	// Define the storage for storing kitty.
 	#[pallet::storage]
 	#[pallet::getter(fn kitties)]
 	pub type Kitties<T> = StorageMap<_, Blake2_128Concat, KittyId, Kitty>;
 
+	// Define storage for storing a Kitty's parents ID
 	#[pallet::storage]
 	#[pallet::getter(fn kitty_parents)]
 	pub type KittyParents<T> =
 		StorageMap<_, Blake2_128Concat, KittyId, (KittyId, KittyId), OptionQuery>;
 
+	// Define sotrage for stroing a Kitty's owner.
 	#[pallet::storage]
 	#[pallet::getter(fn kitty_owner)]
 	pub type KittyOwner<T: Config> = StorageMap<_, Blake2_128Concat, KittyId, T::AccountId>;
@@ -73,6 +80,8 @@ pub mod pallet {
 	// Define the pallet's dispatchable functions
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		// Create a Kitty from the current id storaged on Chain, 
+		// the id is increased every time this menthod is called.
 		#[pallet::call_index(0)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
@@ -86,6 +95,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// Breed a Kitty from the current id storaged on Chain, whose id is affacted by those of two parents.
+		// the current kitty id is increased every time this menthod is called.
 		#[pallet::call_index(1)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn breed(
@@ -112,6 +123,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// Transfer a Kitty's onwership to another one.
 		#[pallet::call_index(2)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn transfer(origin: OriginFor<T>, dest: T::AccountId, kitty_id: KittyId) -> DispatchResult {
@@ -128,6 +140,8 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		// The NextKittyId is stored, which is increased every time this method is called.
+		// It starts from 0.
 		fn get_kittyid_and_update_next() -> Result<KittyId, DispatchError> {
 			NextKittyId::<T>::try_mutate(|next_id| -> Result<KittyId, DispatchError> {
 				let current_id = *next_id;
@@ -138,6 +152,7 @@ pub mod pallet {
 			})
 		}
 
+		// Generate a random value using Randomness strait.
 		fn random_value(sender: &T::AccountId) -> [u8; 16] {
 			let payload = (
 				T::Randomness::random_seed(),

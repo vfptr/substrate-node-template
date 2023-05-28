@@ -4291,6 +4291,8 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
+ "pallet-insecure-randomness-collective-flip",
+ "pallet-kitty",
  "pallet-poe",
  "pallet-sudo",
  "pallet-template",
