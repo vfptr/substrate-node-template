@@ -23,5 +23,6 @@ pub fn migrate<T: Config>() -> Weight {
 		let kitty = Kitty { dna: kitty.0, name: *b"0->1" };
 		Kitties::<T>::insert(i, &kitty);
 	}
+	current_version.put::<Pallet::<T>>();
 	return Weight::zero()
 }
