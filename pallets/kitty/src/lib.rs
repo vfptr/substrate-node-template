@@ -24,7 +24,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use sp_std::prelude::*;
 	use crate::migrations;
-
 	// Define the pallet struct using the pallet::pallet macro
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -37,10 +36,10 @@ pub mod pallet {
 	#[derive(Encode, Decode, Clone, Copy, RuntimeDebug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 	pub struct Kitty {
 		pub dna: [u8; 16],
-		pub name: [u8; 4],
+		pub name: [u8; 8],
 	}
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	// Define the kitty id for storing, increasing 1 every time a kitty is created or breed.
 	#[pallet::storage]
@@ -116,7 +115,7 @@ pub mod pallet {
 		// the id is increased every time this menthod is called.
 		#[pallet::call_index(0)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn create(origin: OriginFor<T>, name: [u8; 4]) -> DispatchResult {
+		pub fn create(origin: OriginFor<T>, name: [u8; 8]) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			let kitty_id = Self::get_kittyid_and_update_next()?;
 			let dna = Self::random_value(&who);
@@ -148,7 +147,7 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn breed(
 			origin: OriginFor<T>,
-			name: [u8; 4],
+			name: [u8; 8],
 			kitty_id_1: KittyId,
 			kitty_id_2: KittyId,
 		) -> DispatchResult {

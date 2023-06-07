@@ -6,7 +6,7 @@ use crate::pallet::*;
 use frame_support::{migration::storage_key_iter, Blake2_128Concat};
 
 #[derive(Encode, Decode, Clone, Copy, RuntimeDebug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-pub struct KittyOld(pub [u8; 16]);
+pub struct KittyOldV1(pub [u8; 16]);
 
 // migrate Kitty structure from v0 to v1.
 pub fn migrate<T: Config>() -> Weight {
@@ -18,7 +18,7 @@ pub fn migrate<T: Config>() -> Weight {
 
 	let module = Kitties::<T>::module_prefix();
 	let item = Kitties::<T>::storage_prefix();
-	for (i, kitty) in storage_key_iter::<KittyId, KittyOld, Blake2_128Concat>(module, item).drain()
+	for (i, kitty) in storage_key_iter::<KittyId, KittyOldV1, Blake2_128Concat>(module, item).drain()
 	{
 		let kitty = Kitty { dna: kitty.0, name: *b"0->1" };
 		Kitties::<T>::insert(i, &kitty);
