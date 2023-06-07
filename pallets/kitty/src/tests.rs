@@ -15,7 +15,7 @@ mod create_fun {
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 			let balance = <Test as Config>::Currency::free_balance(&account_id);
 			assert_eq!(init_balance, balance);
-			assert_ok!(Kitty::create(who));
+			assert_ok!(Kitty::create(who, *b"cat."));
 			let balance = <Test as Config>::Currency::free_balance(&account_id);
 			assert_eq!(init_balance - price, balance);
 
@@ -44,7 +44,7 @@ mod create_fun {
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 			let balance = <Test as Config>::Currency::free_balance(&account_id);
 			assert_eq!(init_balance, balance);
-			assert_noop!(Kitty::create(who), Error::<Test>::InsufficientBalance);
+			assert_noop!(Kitty::create(who, *b"cat."), Error::<Test>::InsufficientBalance);
 		})
 	}
 
@@ -55,7 +55,7 @@ mod create_fun {
 
 			crate::NextKittyId::<Test>::set(crate::KittyId::max_value());
 			assert_noop!(
-				Kitty::create(RuntimeOrigin::signed(account_id)),
+				Kitty::create(RuntimeOrigin::signed(account_id), *b"cat."),
 				Error::<Test>::InvalidKittyId
 			);
 		});
@@ -70,7 +70,7 @@ mod create_fun {
 			let init_balance = price + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 			assert_eq!(Kitty::next_kitty_id(), kitty_id);
-			assert_ok!(Kitty::create(RuntimeOrigin::signed(account_id)));
+			assert_ok!(Kitty::create(RuntimeOrigin::signed(account_id), *b"cat."));
 			assert_eq!(Kitty::next_kitty_id(), kitty_id + 1);
 		});
 	}
@@ -87,9 +87,9 @@ mod breed_fun {
 			let init_balance = price * 2 + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			let kitty_id_2 = Kitty::next_kitty_id();
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 
 			let init_balance = price - 1;
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
@@ -97,7 +97,7 @@ mod breed_fun {
 			assert_eq!(init_balance + <Test as Config>::Currency::minimum_balance(), balance);
 
 			assert_noop!(
-				Kitty::breed(RuntimeOrigin::signed(account_id), kitty_id_1, kitty_id_2),
+				Kitty::breed(RuntimeOrigin::signed(account_id), *b"cat.", kitty_id_1, kitty_id_2),
 				Error::<Test>::InsufficientBalance
 			);
 		})
@@ -110,7 +110,7 @@ mod breed_fun {
 			let kitty_id_2 = 0;
 			let account_id = 10000;
 			assert_noop!(
-				Kitty::breed(RuntimeOrigin::signed(account_id), kitty_id_1, kitty_id_2),
+				Kitty::breed(RuntimeOrigin::signed(account_id), *b"cat.", kitty_id_1, kitty_id_2),
 				Error::<Test>::SameKittyId
 			);
 		});
@@ -126,14 +126,14 @@ mod breed_fun {
 			let init_balance = price * 2 + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			assert!(Kitty::kitties(one_parent_id).is_some());
 			assert_noop!(
-				Kitty::breed(RuntimeOrigin::signed(account_id), one_parent_id, one_parent_id + 1),
+				Kitty::breed(RuntimeOrigin::signed(account_id), *b"cat.", one_parent_id, one_parent_id + 1),
 				Error::<Test>::InvalidKittyId
 			);
 			assert_noop!(
-				Kitty::breed(RuntimeOrigin::signed(account_id), one_parent_id + 1, one_parent_id),
+				Kitty::breed(RuntimeOrigin::signed(account_id), *b"cat.", one_parent_id + 1, one_parent_id),
 				Error::<Test>::InvalidKittyId
 			);
 		});
@@ -149,11 +149,11 @@ mod breed_fun {
 			let init_balance = price * 3 + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			let kitty_id_2 = Kitty::next_kitty_id();
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			let kitty_child_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::breed(RuntimeOrigin::signed(account_id), kitty_id_1, kitty_id_2));
+			assert_ok!(Kitty::breed(RuntimeOrigin::signed(account_id), *b"cat.", kitty_id_1, kitty_id_2));
 			let kitty_child = Kitty::kitties(kitty_child_id);
 			assert!(kitty_child.is_some());
 			assert_eq!(Kitty::next_kitty_id(), kitty_child_id + 1);
@@ -184,7 +184,7 @@ mod transfer_fun {
 			let init_balance = price * 2 + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			assert_noop!(
 				Kitty::transfer(
 					RuntimeOrigin::signed(account_id_another),
@@ -202,7 +202,7 @@ mod transfer_fun {
 			let kitty_id_1 = Kitty::next_kitty_id();
 			let account_id = 10000;
 			let account_dest = 10002;
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			assert_noop!(
 				Kitty::transfer(RuntimeOrigin::signed(account_id), account_dest, kitty_id_1 + 1),
 				Error::<Test>::InvalidKittyId
@@ -221,7 +221,7 @@ mod transfer_fun {
 			let init_balance = price * 2 + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&account_id, init_balance);
 
-			let _ = Kitty::create(RuntimeOrigin::signed(account_id));
+			let _ = Kitty::create(RuntimeOrigin::signed(account_id), *b"cat.");
 			assert_ok!(Kitty::transfer(
 				RuntimeOrigin::signed(account_id),
 				account_dest,
@@ -253,7 +253,7 @@ mod sale_fun {
 			let _ =
 				<Test as Config>::Currency::deposit_creating(&not_onwer_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			assert_noop!(Kitty::sale(not_owner, kitty_id), Error::<Test>::NotKittyOwner);
 		})
 	}
@@ -268,7 +268,7 @@ mod sale_fun {
 			let init_balance = price + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&saler_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			let _ = Kitty::sale(saler.clone(), kitty_id);
 			assert_noop!(Kitty::sale(saler, kitty_id), Error::<Test>::AlreadyOnSale);
 		})
@@ -284,7 +284,7 @@ mod sale_fun {
 			let init_balance = price + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&saler_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			assert_ok!(Kitty::sale(saler, kitty_id));
 
 			let e = Event::<Test>::KittyOnSale { who: saler_account_id, kitty_id };
@@ -310,7 +310,7 @@ mod buy_fun {
 			let _ =
 				<Test as Config>::Currency::deposit_creating(&buyer_account_id, init_balance - 1);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			let _ = Kitty::sale(saler, kitty_id);
 			assert_noop!(Kitty::buy(buyer, kitty_id), Error::<Test>::InsufficientBalance);
 		})
@@ -330,7 +330,7 @@ mod buy_fun {
 			let _ =
 				<Test as Config>::Currency::deposit_creating(&buyer_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			assert_noop!(Kitty::buy(buyer, kitty_id), Error::<Test>::NotOnSale);
 		})
 	}
@@ -345,7 +345,7 @@ mod buy_fun {
 			let init_balance = price + <Test as Config>::Currency::minimum_balance();
 			let _ = <Test as Config>::Currency::deposit_creating(&saler_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			let _ = Kitty::sale(saler.clone(), kitty_id);
 			assert_noop!(Kitty::buy(saler, kitty_id), Error::<Test>::AlreadyOwned);
 		})
@@ -366,7 +366,7 @@ mod buy_fun {
 			let _ =
 				<Test as Config>::Currency::deposit_creating(&buyer_account_id, init_balance);
 			let kitty_id = Kitty::next_kitty_id();
-			assert_ok!(Kitty::create(saler.clone()));
+			assert_ok!(Kitty::create(saler.clone(), *b"cat."));
 			let _ = Kitty::sale(saler, kitty_id);
 			assert_ok!(Kitty::buy(buyer, kitty_id));
 
