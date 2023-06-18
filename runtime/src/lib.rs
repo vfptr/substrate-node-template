@@ -6,7 +6,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::PalletId;
+use codec::Encode;
+use frame_support::{sp_runtime::SaturatedConversion, PalletId};
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -46,9 +47,10 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub use pallet_btc_price;
+pub use pallet_insecure_randomness_collective_flip;
 /// Import the template pallet.
 pub use pallet_template;
-pub use pallet_insecure_randomness_collective_flip;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -270,8 +272,68 @@ impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+/// Configure the offchain runtime part
+impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
+		call: RuntimeCall,
+		public: <Signature as sp_runtime::traits::Verify>::Signer,
+		account: AccountId,
+		nonce: Index,
+	) -> Option<(
+		RuntimeCall,
+		<UncheckedExtrinsic as sp_runtime::traits::Extrinsic>::SignaturePayload,
+	)> {
+		let tip = 0;
+
+		let period =
+			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+		let current_block = System::block_number().saturated_into::<u64>().saturating_sub(1);
+		let era = generic::Era::mortal(period, current_block);
+		let extra = (
+			frame_system::CheckNonZeroSender::<Runtime>::new(),
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckEra::<Runtime>::from(era),
+			frame_system::CheckNonce::<Runtime>::from(nonce),
+			frame_system::CheckWeight::<Runtime>::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+		);
+		let raw_payload = SignedPayload::new(call, extra)
+			.map_err(|_| {
+				//log::warn!("Unable to create signed payload: {:?}", e);
+			})
+			.ok()?;
+		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
+		let address = account;
+		let (call, extra, _) = raw_payload.deconstruct();
+		Some((call, (sp_runtime::MultiAddress::Id(address), signature.into(), extra)))
+	}
+}
+
+impl frame_system::offchain::SigningTypes for Runtime {
+	type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
+
+impl pallet_btc_price::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type AuthorityId = pallet_btc_price::crypto::TestAuthId;
+}
+
 ///Configure the pallet-poe in pallets/poe
-impl pallet_poe::Config for Runtime{
+impl pallet_poe::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxClaimLength = ConstU32<512>;
 }
@@ -282,7 +344,7 @@ parameter_types! {
 }
 
 ///Configure the pallet-poe in pallets/poe
-impl pallet_kitty::Config for Runtime{
+impl pallet_kitty::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Randomness = Random;
 	type Currency = Balances;
@@ -290,8 +352,7 @@ impl pallet_kitty::Config for Runtime{
 	type PalletId = KittyPalletId;
 }
 
-impl pallet_insecure_randomness_collective_flip::Config for Runtime {
-}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -312,6 +373,7 @@ construct_runtime!(
 		TemplateModule: pallet_template,
 		Poe: pallet_poe,
 		Kitty: pallet_kitty,
+		BtcPrice: pallet_btc_price,
 		Random: pallet_insecure_randomness_collective_flip,
 	}
 );
