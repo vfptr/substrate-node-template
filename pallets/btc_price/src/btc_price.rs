@@ -18,7 +18,8 @@ pub fn query_btc_price() -> Result<BtcPrice, http::Error> {
 	// prepare for send request
 	let deadline = sp_io::offchain::timestamp().add(Duration::from_millis(8_000));
 	let request = http::Request::get(
-		"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+		// "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+		"http://mock.apistub.cn/user/noraus/mock/btcprice"
 	);
 	let pending = request
 		.add_header("User-Agent", "Substrate-Offchain-Worker")
@@ -37,7 +38,6 @@ pub fn query_btc_price() -> Result<BtcPrice, http::Error> {
 		log::warn!("No UTF8 body");
 		http::Error::Unknown
 	})?;
-	// let body_str = r#"{"bitcoin":{"usd":26488}}"#;
 
 	// parse the response str
 	let price_info: BtcPrice = serde_json::from_str(body_str).map_err(|_| http::Error::Unknown)?;
