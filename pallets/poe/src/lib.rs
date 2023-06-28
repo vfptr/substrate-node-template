@@ -8,14 +8,21 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
+pub use weights::WeightInfo;
+
 // Define the pallet module using the frame_support::pallet macro
 // A pallet for proof of existence.
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::pallet_prelude::*;
-    use frame_system::pallet_prelude::*;
-    use sp_std::prelude::*;
-
+    use super::WeightInfo;
+    pub use frame_support::pallet_prelude::*;
+    pub use frame_system::pallet_prelude::*;
+    pub use sp_std::prelude::*;
+    
     // Define the pallet struct using the pallet::pallet macro
     #[pallet::pallet]
     pub struct Pallet<T>(_);
@@ -26,6 +33,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         #[pallet::constant]
         type MaxClaimLength: Get<u32>;
+        type WeightInfo: WeightInfo;
     }
 
     // Define the storage item for storing the claims
@@ -61,7 +69,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         // Create a new claim
 		#[pallet::call_index(0)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::create_claim(claim.len() as u32))]
         pub fn create_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResult {
             // Verify that the transaction is signed by a valid account
             let who = ensure_signed(origin)?;
@@ -83,7 +91,7 @@ pub mod pallet {
 
         // Revoke an existing claim
 		#[pallet::call_index(1)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::revoke_claim(claim.len() as u32))]
         pub fn revoke_claim(origin: OriginFor<T>, claim: Vec<u8>) -> DispatchResult {
             // Verify that the transaction is signed by a valid account
             let sender = ensure_signed(origin)?;
@@ -110,7 +118,7 @@ pub mod pallet {
 		
 		/// transfer the claim from a account id to another account id.
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::transfer_claim(claim.len() as u32))]
 		pub fn transfer_claim(origin: OriginFor<T>, claim: Vec<u8>, dest: T::AccountId) -> DispatchResult{
 			// Ensure that the transaction is signed by the sender.
 			let sender = ensure_signed(origin)?;

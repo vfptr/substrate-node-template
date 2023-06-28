@@ -336,6 +336,7 @@ impl pallet_btc_price::Config for Runtime {
 impl pallet_poe::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxClaimLength = ConstU32<512>;
+	type WeightInfo = pallet_poe::weights::SubstrateWeight<Self>;
 }
 
 parameter_types! {
@@ -422,6 +423,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_template, TemplateModule]
+		[pallet_poe, Poe]
 	);
 }
 
