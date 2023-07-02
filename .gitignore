@@ -9,3 +9,6 @@
 # direnv files
 .envrc
 .direnv
+
+node-key-file*
+/tmp
