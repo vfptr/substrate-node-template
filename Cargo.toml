@@ -5,6 +5,7 @@ members = [
     "pallets/poe",
     "pallets/kitty",
     "pallets/btc_price",
+    "primitives",
     "runtime",
 ]
 [profile.release]
